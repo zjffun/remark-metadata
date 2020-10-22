@@ -47,11 +47,34 @@ var example = vfile.readSync('example.md');
 
 remark()
   .use(frontmatter)
-  .use(metadata, { git: true })
+  .use(metadata, {
+    git: true,
+    metadata: {
+      // string
+      tag: 'remark-metadata',
+      // build-in options
+      created: metadata.CREATED_TIME,
+      updated: metadata.LAST_MODIFIED_TIME,
+      // function
+      duration({ modifiedTime, createdTime, vFile }) {
+        return new Date(modifiedTime).getTime() - new Date(createdTime).getTime();
+      },
+      // object
+      title:{
+        value: funcion({ modifiedTime, createdTime, vFile }){
+          return vFile;
+        },
+        shouldUpdate(newValue, oldValue) {
+          if(oldVaule !== undefined){
+            return true;
+          }
+        },
+      }
+    },
+  })
   .process(example, function (err, file) {
     if (err) throw err;
-    console.log(String(file))
-    })
+    console.log(String(file));
   });
 ```
 
@@ -61,7 +84,6 @@ This will output the following Markdown:
 ---
 title: Example
 lastModifiedDate: 'Tue, 28 Nov 2017 02:44:25 GMT'
-
 ---
 
 # Example
@@ -76,3 +98,7 @@ If a file has no Front Matter, it will be added by this plugin.
 The plugin has the following options:
 
 - `git`: Enables determining modification dates using git (defaults: `true`)
+- `metadata`: An object describe each metadata.
+- `metadata[key]`: A string value, or a function will be called with some information and using its return value, or an object contain options below.
+- `metadata[key].shouldUpdate`: A function will be called with old and new value arguments of this metadata. The metadata will update, if this function return truthy.
+- `metadata[key].value`: A string or a function, like `metadata[key]`.
